@@ -17,4 +17,7 @@ migratedown:
 sqlc:
 	sqlc generate
 
+test:
+	go test -v -cover ./...
+
 .PHONY: simplebank_container migrations migrateup migratedown sqcl

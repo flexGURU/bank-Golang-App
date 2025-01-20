@@ -47,9 +47,9 @@ func (store *Store) execTX(ctx context.Context, fn func(*Queries) error) error {
 }
 
 type TransferTxParams struct {
-	FromAccountId int64 `json:"from_account_id"`
-	ToAccountId int64 `json:"to_account_id"`
-	Amount int64 `json:"amount"`
+	FromAccountId int32 `json:"from_account_id"`
+	ToAccountId int32 `json:"to_account_id"`
+	Amount int32 `json:"amount"`
 }
 
 type TransferTxResults struct {
@@ -63,7 +63,41 @@ type TransferTxResults struct {
 
 // 
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResults, error) {
+	var result TransferTxResults
+
+	err := store.execTX(ctx, func(q *Queries) error {
+
+		var err error
+		result.Transfer, err = q.CreateTransfer(ctx,  CreateTransferParams{
+			FromAccountID: arg.FromAccountId,
+			ToAccountID: arg.ToAccountId,
+			Amount: float64(arg.Amount),
+		})
+		if err != nil {
+			return  err
+		}
+
+		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			AccountID: arg.FromAccountId,
+			Amount: -arg.Amount,
+		})
+		if err != nil {
+			return  err
+		}
+
+		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			AccountID: arg.FromAccountId,
+			Amount: arg.Amount,
+		})
+		if err != nil {
+			return  err
+		}
 
 
-	d
+		return nil
+	})
+
+	return result, err
+
+	
 }

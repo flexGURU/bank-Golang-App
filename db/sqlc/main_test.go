@@ -14,17 +14,19 @@ const (
 	dsn = "postgresql://root:secret@localhost:5432/bank?sslmode=disable"
 )
 
+var dbConn *sql.DB
 
 func TestMain(m *testing.M) {
+	var err error
 
-	conn, err := sql.Open(dbDriver, dsn)
+	dbConn, err = sql.Open(dbDriver, dsn)
 	if err != nil {
 		log.Fatal("problem opening db", err)
 	}
 
-	defer conn.Close()
+	defer dbConn.Close()
 
-	testQueries = New(conn)
+	testQueries = New(dbConn)
 
 	os.Exit(m.Run())
 

@@ -20,4 +20,7 @@ sqlc:
 test:
 	go test -v -cover ./...
 
+gitpush:
+	git add . && git commit -m "sqlc" && git push
+
 .PHONY: simplebank_container migrations migrateup migratedown sqcl

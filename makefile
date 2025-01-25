@@ -9,10 +9,10 @@ createdb:
 	docker exec -it simplebank createdb --username=root --owner=root bank
 
 migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up
+	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up
 
 migratedown:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down
+	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down
 
 sqlc:
 	sqlc generate
@@ -24,3 +24,4 @@ gitpush:
 	git add . && git commit -m "sqlc" && git push
 
 .PHONY: simplebank_container migrations migrateup migratedown sqcl
+

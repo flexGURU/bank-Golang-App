@@ -16,7 +16,7 @@ var ctx = context.Background()
 func createTestAccount(t *testing.T) Account {
 	arg := CreateAccountParams{
 		Owner: utils.RandomOwner(),
-		Balance: float64(utils.RandomMoney()),
+		Balance: (utils.RandomMoney()),
 		Currency: utils.RandomCurrency(),
 	}
 
@@ -70,7 +70,7 @@ func TestUpdateAccount(t *testing.T) {
 
 	arg := UpdateAccountParams{
 		ID: account1.ID,
-		Balance: float64(utils.RandomMoney()),
+		Balance: utils.RandomMoney(),
 	}
 
 	account2, err := testQueries.UpdateAccount(ctx, arg )

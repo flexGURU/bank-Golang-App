@@ -23,5 +23,8 @@ test:
 gitpush:
 	git add . && git commit -m "sqlc" && git push
 
+psql:
+	docker exec -it simplebank psql bank
+
 .PHONY: simplebank_container migrations migrateup migratedown sqcl
 

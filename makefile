@@ -26,5 +26,8 @@ gitpush:
 psql:
 	docker exec -it simplebank psql bank
 
-.PHONY: simplebank_container migrations migrateup migratedown sqcl
+run:
+	go run ./cmd/main.go
+
+.PHONY: simplebank_container migrations migrateup migratedown sqcl run
 

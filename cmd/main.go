@@ -6,27 +6,30 @@ import (
 
 	"github.com/flexGURU/simplebank/api"
 	db "github.com/flexGURU/simplebank/db/sqlc"
-	_"github.com/lib/pq"
-
+	"github.com/flexGURU/simplebank/utils"
+	_ "github.com/lib/pq"
 )
 
-const (
-	dbDriver = "postgres"
-	dsn      = "postgresql://root:secret@localhost:5432/bank?sslmode=disable"
-	address = ":8080"
-)
+
 
 func main() {
 
-	connDb, err := sql.Open(dbDriver,dsn)
+	config, err := utils.LoadConfig(".")
 	if err != nil {
-		log.Fatal("error opening the database")
+		log.Fatal("error loading  config: ", err)
+	}
+
+
+
+	connDb, err := sql.Open(config.DBDriver,config.DSN)
+	if err != nil {
+		log.Fatal("error opening the database",err)
 	}
 
 	store := db.NewStore(connDb)
 
 	server := api.NewServer(store)
-	if server.StartServer(address); err != nil {
+	if server.StartServer(config.ServerAddress); err != nil {
 		log.Fatal("error starting up the server")
 	}
 

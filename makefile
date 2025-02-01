@@ -29,5 +29,8 @@ psql:
 run:
 	go run ./cmd/main.go
 
+mock:
+	mockgen -package 
+
 .PHONY: simplebank_container migrations migrateup migratedown sqcl run
 

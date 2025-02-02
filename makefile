@@ -30,7 +30,7 @@ run:
 	go run ./cmd/main.go
 
 mock:
-	mockgen -package 
+	mockgen -package mockdb -destination db/mock/store.go github.com/flexGURU/simplebank/db/sqlc Store
 
-.PHONY: simplebank_container migrations migrateup migratedown sqcl run
+.PHONY: simplebank_container migrations migrateup migratedown sqcl run mock
 

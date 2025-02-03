@@ -11,8 +11,14 @@ createdb:
 migrateup:
 	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up
 
+migrateup1:
+	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up 1
+
 migratedown:
 	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down
+
+migratedown1:
+	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down 1
 
 sqlc:
 	sqlc generate
@@ -32,5 +38,5 @@ run:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/flexGURU/simplebank/db/sqlc Store
 
-.PHONY: simplebank_container migrations migrateup migratedown sqcl run mock
+.PHONY: simplebank_container migrations migrateup migratedown sqcl run mock migrateup1 migratedown1
 

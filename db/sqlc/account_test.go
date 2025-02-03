@@ -14,8 +14,10 @@ var ctx = context.Background()
 
 
 func createTestAccount(t *testing.T) Account {
+	user := CreateUserTestAccount(t)
+
 	arg := CreateAccountParams{
-		Owner: utils.RandomOwner(),
+		Owner: user.Username,
 		Balance: (utils.RandomMoney()),
 		Currency: utils.RandomCurrency(),
 	}

@@ -32,9 +32,10 @@ func TestGetAccountAPI(t *testing.T) {
             accountID: account.ID,
             stub: func(store *mockdb.MockStore){
                 store.EXPECT().
-                GetAccount(gomock.Any(), gomock.Eq(account.ID)).
-                Times(1).
-                Return(account, nil)
+                    GetAccount(gomock.Any(), gomock.Eq(account.ID)).
+                    Times(1).   
+                    Return(account, nil)
+
             },
             checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder){
                 require.Equal(t,  http.StatusOK, recorder.Code)

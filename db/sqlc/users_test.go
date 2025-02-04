@@ -3,6 +3,7 @@ package db
 import (
 	"testing"
 
+	"github.com/flexGURU/simplebank/auth"
 	"github.com/flexGURU/simplebank/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -11,10 +12,14 @@ import (
 
 
 func CreateUserTestAccount(t *testing.T) User {
+	hashedPwd, err := auth.HashPassword(utils.RandomString(6))
+
+	require.NoError(t, err)
+
 
 	arg := CreateUserParams {
 		Username: utils.RandomOwner(),
-		HashedPassword: "secret",
+		HashedPassword: hashedPwd,
 		FullName: utils.RandomOwner(),
 		Email: utils.RandomEmail(),
 	}

@@ -104,7 +104,8 @@ func TestGetAccountAPI(t *testing.T) {
         
         
             // creating a server for test and send the request
-            server := NewServer(store)
+            server := newTestServer(t, store)
+            require.NotEmpty(t, server)
             recorder := httptest.NewRecorder()
         
             url := fmt.Sprintf("/getaccount/%d", tc.accountID)

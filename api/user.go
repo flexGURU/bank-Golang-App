@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -18,7 +19,7 @@ type createUserRequest struct {
 	Email          string `json:"email" binding:"required,email"`
 }
 
-type userCreateResponse struct {
+type userResponse struct {
 	Username          string    `json:"username"`
 	FullName          string    `json:"full_name"`
 	Email             string    `json:"email"`
@@ -54,7 +55,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	userResponse := userCreateResponse {
+	userResponse := userResponse {
 		Username: user.Username,
 		FullName: user.FullName,
 		Email: user.Email,
@@ -64,7 +65,60 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, userResponse)
 
+}
 
 
+type loginUserRequest struct {
+	Username       string `json:"username" binding:"required,alphanum"`
+	HashedPassword string `json:"hashed_password" binding:"required,min=6"`
+}
+
+type loginResponse struct {
+	AccessToken string `json:"access_token"`
+	User userResponse `json:"user"`
+}
+
+func (server *Server) loginUser(ctx *gin.Context) {
+
+	var req loginUserRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse(err))
+		return
+	}
+
+	user, err  := server.store.GetUser(ctx, req.Username)
+	if err != nil {
+		if err == sql.ErrNoRows{
+			ctx.JSON(http.StatusNotFound, utils.ErrorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
+		return
+	}
+
+	if err := auth.ComparePassword(user.HashedPassword, req.HashedPassword); err != nil {
+		ctx.JSON(http.StatusUnauthorized, utils.ErrorResponse(err))
+		return
+	}
+
+	access_token, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
+	}
+
+	Response := loginResponse {
+		AccessToken: access_token,
+		User: userResponse{
+			Username: user.Username,
+			FullName: user.FullName,
+			Email: user.Email,
+			PasswordChangedAt: user.PasswordChangedAt,
+			CreatedAt: user.CreatedAt,
+			},
+		
+	}
+
+	ctx.JSON(http.StatusOK, Response)
 
 }

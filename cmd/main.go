@@ -28,8 +28,11 @@ func main() {
 
 	store := db.NewStore(connDb)
 
-	server := api.NewServer(store)
-	if server.StartServer(config.ServerAddress); err != nil {
+	server, err := api.NewServer(config, store)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := server.StartServer(config.ServerAddress); err != nil {
 		log.Fatal("error starting up the server")
 	}
 

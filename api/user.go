@@ -9,6 +9,7 @@ import (
 	db "github.com/flexGURU/simplebank/db/sqlc"
 	"github.com/flexGURU/simplebank/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 
@@ -74,7 +75,11 @@ type loginUserRequest struct {
 }
 
 type loginResponse struct {
+	SessionID uuid.UUID `json:"session_id"`
 	AccessToken string `json:"access_token"`
+	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
+	RefreshToken string `json:"referesh_token"`
+	RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
 	User userResponse `json:"user"`
 }
 
@@ -102,12 +107,31 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	access_token, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	access_token, access_token_payload, err := server.tokenMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
 	}
 
+	referesh_token, referesh_token_payload,  err := server.tokenMaker.CreateToken(user.Username, server.config.RefreshTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
+	}
+
+	session, err := server.store.CreateSession(ctx, db.CreateSessionParams {
+		ID: referesh_token_payload.ID,
+		Username: referesh_token_payload.Username,
+		RefreshToken: referesh_token,
+		UserAgent: ctx.Request.UserAgent(),
+		ClientIp: ctx.ClientIP(),
+		IsBlocked: false,
+		ExpiresAt: referesh_token_payload.ExpiredAt,
+	})
+
 	Response := loginResponse {
+		SessionID: session.ID,
+		AccessTokenExpiresAt: access_token_payload.ExpiredAt,
+		RefreshToken: referesh_token,
+		RefreshTokenExpiresAt: referesh_token_payload.ExpiredAt,
 		AccessToken: access_token,
 		User: userResponse{
 			Username: user.Username,

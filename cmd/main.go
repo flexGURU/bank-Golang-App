@@ -3,11 +3,16 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net"
 
 	"github.com/flexGURU/simplebank/api"
 	db "github.com/flexGURU/simplebank/db/sqlc"
+	"github.com/flexGURU/simplebank/gapi"
+	"github.com/flexGURU/simplebank/pb"
 	"github.com/flexGURU/simplebank/utils"
 	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 
@@ -28,12 +33,51 @@ func main() {
 
 	store := db.NewStore(connDb)
 
+	startGRPCServer(config, store)
+
+	
+
+}
+func startGRPCServer(config utils.Config,store db.Store)  {
+
+	server, err := gapi.NewServer(config, store)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	grpcServer := grpc.NewServer()
+	pb.RegisterSimpleBankServer(grpcServer, server)
+	reflection.Register(grpcServer)
+
+
+	listener, err := net.Listen("tcp", config.GRPCServerAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("startinng grpc Listener")
+	for service := range grpcServer.GetServiceInfo() {
+		log.Println("Registered Service:", service)
+	}
+
+	err = grpcServer.Serve(listener)
+	if err != nil {
+		log.Fatal("cannot start grpc server")
+	}
+	for service := range grpcServer.GetServiceInfo() {
+		log.Println("Registered Service:")
+
+		log.Println("Registered Service:", service)
+	}
+	
+
+}
+
+func startGinServer(config utils.Config,store db.Store)  {
 	server, err := api.NewServer(config, store)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := server.StartServer(config.ServerAddress); err != nil {
+	if err := server.StartServer(config.HTTPServerAddress); err != nil {
 		log.Fatal("error starting up the server")
 	}
-
 }

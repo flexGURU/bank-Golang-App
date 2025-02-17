@@ -63,11 +63,7 @@ func startGRPCServer(config utils.Config,store db.Store)  {
 	if err != nil {
 		log.Fatal("cannot start grpc server")
 	}
-	for service := range grpcServer.GetServiceInfo() {
-		log.Println("Registered Service:")
 
-		log.Println("Registered Service:", service)
-	}
 	
 
 }

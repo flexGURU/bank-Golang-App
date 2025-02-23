@@ -11,6 +11,7 @@ import (
 	"github.com/flexGURU/simplebank/pb"
 	"github.com/flexGURU/simplebank/utils"
 	_ "github.com/lib/pq"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -21,8 +22,9 @@ func main() {
 
 	config, err := utils.LoadConfig(".")
 	if err != nil {
-		log.Fatal("error loading  config: ", err)
+		log.Fatal("error loading  config: ", err)  
 	}
+
 
 
 
@@ -33,7 +35,7 @@ func main() {
 
 	store := db.NewStore(connDb)
 
-	startGRPCServer(config, store)
+	startGinServer(config, store)
 
 	
 

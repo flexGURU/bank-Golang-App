@@ -44,8 +44,11 @@ proto:
     --go-grpc_out=pb --go-grpc_opt=paths=source_relative \
     proto/*.proto
 
+swagger:
+	swag init -g ./cmd/main.go -o docs
+
 evans: 
 	evans --host localhost --port 9090 -r repl
 
-.PHONY: simplebank_container migrations migrateup migratedown sqcl run mock migrateup1 migratedown1 proto evans
+.PHONY: simplebank_container migrations migrateup migratedown sqcl run mock migrateup1 migratedown1 proto evans swagger
 

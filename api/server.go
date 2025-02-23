@@ -7,6 +7,10 @@ import (
 	"github.com/flexGURU/simplebank/token"
 	"github.com/flexGURU/simplebank/utils"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+   	ginSwagger "github.com/swaggo/gin-swagger"
+	docs "github.com/flexGURU/simplebank/docs"
+
 )
 
 
@@ -20,6 +24,8 @@ type Server struct {
 
 // NewServer will create a new HTTP server and setup routing
 func NewServer(config utils.Config,store db.Store) (*Server, error)  {
+	docs.SwaggerInfo.BasePath = ""
+
 
 	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey) 
 	if err != nil {
@@ -53,6 +59,8 @@ func (server *Server) serverRoutes() {
 	authRoutes.GET("/listaccounts", server.listAccounts)
 	
 	authRoutes.POST("/transfers", server.createTransfer)
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	
 
 	server.router = router

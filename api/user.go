@@ -10,6 +10,7 @@ import (
 	"github.com/flexGURU/simplebank/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
 )
 
 
@@ -28,6 +29,17 @@ type userResponse struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
+// createUser godoc
+// @Summary Create a new user
+// @Description Creates a new user with the provided details
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body createUserRequest true "User creation request"
+// @Success 200 
+// @Failure 400 
+// @Failure 500 
+// @Router /user [post]
 func (server *Server) createUser(ctx *gin.Context) {
 
 	var req createUserRequest
@@ -83,6 +95,18 @@ type loginResponse struct {
 	User userResponse `json:"user"`
 }
 
+
+// loginUser godoc
+// @Summary Login created user
+// @Description Logins a user with the provided details
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body loginUserRequest true "Login User creation request"
+// @Success 200 
+// @Failure 400 
+// @Failure 500 
+// @Router /user/login [post]
 func (server *Server) loginUser(ctx *gin.Context) {
 
 	var req loginUserRequest
@@ -142,6 +166,8 @@ func (server *Server) loginUser(ctx *gin.Context) {
 			},
 		
 	}
+
+	
 
 	ctx.JSON(http.StatusOK, Response)
 

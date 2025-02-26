@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"log/slog"
 	"net"
 
 	"github.com/flexGURU/simplebank/api"
@@ -10,6 +11,8 @@ import (
 	"github.com/flexGURU/simplebank/gapi"
 	"github.com/flexGURU/simplebank/pb"
 	"github.com/flexGURU/simplebank/utils"
+	"github.com/flexGURU/simplebank/worker"
+	"github.com/hibiken/asynq"
 	_ "github.com/lib/pq"
 
 	"google.golang.org/grpc"
@@ -25,9 +28,6 @@ func main() {
 		log.Fatal("error loading  config: ", err)  
 	}
 
-
-
-
 	connDb, err := sql.Open(config.DBDriver,config.DSN)
 	if err != nil {
 		log.Fatal("error opening the database",err)
@@ -35,10 +35,28 @@ func main() {
 
 	store := db.NewStore(connDb)
 
-	startGinServer(config, store)
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
 
+	redisDistro := worker.NewRedisTaskDistributer(redisOpt)
+
+	go runTaskProcessor(redisOpt, store)
+	startGinServer(config, store, redisDistro)
+
+}
+
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store)  {
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+
+	slog.Info(
+		"task taskProcessor started",
+	)
+	if err := taskProcessor.Start(); err != nil {
+		slog.Error("failed to start task processor", err)
+	}
 	
-
+	
 }
 func startGRPCServer(config utils.Config,store db.Store)  {
 
@@ -70,12 +88,16 @@ func startGRPCServer(config utils.Config,store db.Store)  {
 
 }
 
-func startGinServer(config utils.Config,store db.Store)  {
-	server, err := api.NewServer(config, store)
+func startGinServer(config utils.Config,store db.Store, taskDistributer worker.TaskDistributer)  {
+	server, err := api.NewServer(config, store, taskDistributer)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := server.StartServer(config.HTTPServerAddress); err != nil {
+	err = server.StartServer(config.HTTPServerAddress); 
+	slog.Info("started the server", 
+				slog.String("port", config.HTTPServerAddress),
+				)
+	if err != nil {
 		log.Fatal("error starting up the server")
 	}
 }

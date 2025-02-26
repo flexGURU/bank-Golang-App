@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	db "github.com/flexGURU/simplebank/db/sqlc"
+	docs "github.com/flexGURU/simplebank/docs"
 	"github.com/flexGURU/simplebank/token"
 	"github.com/flexGURU/simplebank/utils"
+	"github.com/flexGURU/simplebank/worker"
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
-   	ginSwagger "github.com/swaggo/gin-swagger"
-	docs "github.com/flexGURU/simplebank/docs"
-
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 
@@ -20,10 +20,11 @@ type Server struct {
 	store db.Store
 	router *gin.Engine
 	tokenMaker token.Maker
+	taskDistributer worker.TaskDistributer
 }
 
 // NewServer will create a new HTTP server and setup routing
-func NewServer(config utils.Config,store db.Store) (*Server, error)  {
+func NewServer(config utils.Config, store db.Store, taskDistributer worker.TaskDistributer) (*Server, error)  {
 	docs.SwaggerInfo.BasePath = ""
 
 
@@ -36,6 +37,7 @@ func NewServer(config utils.Config,store db.Store) (*Server, error)  {
 		config: config,
 		store: store,
 		tokenMaker: tokenMaker,
+		taskDistributer: taskDistributer,
 	}
 
 	server.serverRoutes()

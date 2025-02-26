@@ -1,4 +1,4 @@
-// code to create tasks and distribute workloads
+// code to create tasks and distribute workloads to theredis queue
 package worker
 
 import (
@@ -17,7 +17,7 @@ type TaskDistributer interface {
 
 }
 
-type RedisTaskDsitrbuter struct {
+type RedisTaskDistributer struct {
     client *asynq.Client
 
     
@@ -26,7 +26,7 @@ type RedisTaskDsitrbuter struct {
 func NewRedisTaskDistributer(redisOpt asynq.RedisClientOpt) TaskDistributer {
     client := asynq.NewClient(redisOpt)
     
-    return &RedisTaskDsitrbuter{
+    return &RedisTaskDistributer{
         client: client,
     }
 }

@@ -50,5 +50,8 @@ swagger:
 evans: 
 	evans --host localhost --port 9090 -r repl
 
+redis: 
+	docker run --name redis -p 6379:6379 -d redis:alpine
+
 .PHONY: simplebank_container migrations migrateup migratedown sqcl run mock migrateup1 migratedown1 proto evans swagger
 

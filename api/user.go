@@ -8,9 +8,9 @@ import (
 	"github.com/flexGURU/simplebank/auth"
 	db "github.com/flexGURU/simplebank/db/sqlc"
 	"github.com/flexGURU/simplebank/utils"
+	"github.com/flexGURU/simplebank/worker"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-
 )
 
 
@@ -64,6 +64,15 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	user, err  := server.store.CreateUser(ctx, args)
 	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
+		return
+	}
+
+	taskPayload := &worker.PayloadSendVerifyEmail{
+		Username: user.Username,
+	}
+
+	if err := server.taskDistributer.DistributeTaskSendVerifyEmail(ctx, taskPayload); err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
 		return
 	}

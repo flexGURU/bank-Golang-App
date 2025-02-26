@@ -2,11 +2,10 @@ package worker
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"log/slog"
-	"os"
 
 	"github.com/hibiken/asynq"
 )
@@ -19,7 +18,7 @@ const (
 	TaskSendVerifyEmail = "task:send_verify_email"
 )
 
-func (distributor *RedisTaskDsitrbuter) DistributeTaskSendVerifyEmail(
+func (distributor *RedisTaskDistributer) DistributeTaskSendVerifyEmail(
 	ctx context.Context,
 	payload *PayloadSendVerifyEmail,
 	options ...asynq.Option,
@@ -35,8 +34,45 @@ func (distributor *RedisTaskDsitrbuter) DistributeTaskSendVerifyEmail(
 		return fmt.Errorf("failed to enqueu task %w", err)
 		
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	logger.Info(taskInfo.ID)
+
+	slog.Info("task enqueued",
+			slog.String("task_type", task.Type()),               // Task type
+			slog.String("task_payload", string(task.Payload())), // Task payload
+			slog.String("task_queue", taskInfo.Queue),           // Task queue
+			slog.Int("task_max_retry", taskInfo.MaxRetry),       // Task max retry
+			)
+
+
+			return nil
+
+}
+
+func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error {
+
+	var payload PayloadSendVerifyEmail
+
+	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
+		return fmt.Errorf("error unmarshalling payload %w", asynq.SkipRetry)
+	}
+
+	user, err := processor.store.GetUser(ctx, payload.Username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("user Not Found %w", asynq.SkipRetry)
+		}
+
+		return fmt.Errorf("Internal server error %w", err)
+		
+	}
+
+	slog.Info(
+		"processed task",
+		slog.String("task type", task.Type()),
+		slog.String("email", user.Email),
+	)
+
 
 	return nil
+
+
 }

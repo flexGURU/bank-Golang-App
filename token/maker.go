@@ -11,6 +11,7 @@ type Maker interface {
 
 	// chekc if input token is valid or not
 	// if valid the method will return the payload object data
+	// if valid the method will return the payload object data
 	VerifyToken(token string) (*Payload, error)
 
 }

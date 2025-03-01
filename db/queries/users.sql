@@ -12,3 +12,9 @@ RETURNING *;
 -- name: GetUser :one
 SELECT * FROM users 
 WHERE username = $1 LIMIT 1;
+
+-- name: UpdateUserVerification :one
+UPDATE users 
+SET is_verified = TRUE
+WHERE username = @username
+RETURNING *;

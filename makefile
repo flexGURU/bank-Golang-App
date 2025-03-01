@@ -1,4 +1,7 @@
 
+DB_URL=postgresql://root:secret@localhost:5432/bank?sslmode=disable
+
+
 simplebank_container:
 	docker run --name simplebank -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:12-alpine 
 
@@ -9,16 +12,16 @@ createdb:
 	docker exec -it simplebank createdb --username=root --owner=root bank
 
 migrateup:
-	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up
+	migrate -path db/migrations -database "$(DB_URL)" -verbose up
 
 migrateup1:
-	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose up 1
+	migrate -path db/migrations -database "$(DB_URL)" -verbose up 1
 
 migratedown:
-	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down
+	migrate -path db/migrations -database "$(DB_URL)" -verbose down
 
 migratedown1:
-	migrate -path db/migrations -database "postgresql://root:secret@localhost:5432/bank?sslmode=disable" -verbose down 1
+	migrate -path db/migrations -database "$(DB_URL)" -verbose down 1
 
 sqlc:
 	sqlc generate
@@ -53,5 +56,15 @@ evans:
 redis: 
 	docker run --name redis -p 6379:6379 -d redis:alpine
 
-.PHONY: simplebank_container migrations migrateup migratedown sqcl run mock migrateup1 migratedown1 proto evans swagger
+dbdocs: 
+	dbdocs build dbdocs/db.dbml
+
+dbml2sql: 
+	dbml2sql --postgres -o dbdocs/schema.sql dbdocs/db.dbml
+
+new_migration:
+	migrate create -ext sql -dir db/migrations -seq $(name)
+
+
+.PHONY: newmigrate simplebank_container migrations migrateup migratedown sqcl run mock dbdocs dbml2sql migrateup1 migratedown1 proto evans swagger
 

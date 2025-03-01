@@ -5,8 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"log/slog"
 
+	db "github.com/flexGURU/simplebank/db/sqlc"
+	"github.com/flexGURU/simplebank/utils"
 	"github.com/hibiken/asynq"
 )
 
@@ -55,6 +58,7 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 		return fmt.Errorf("error unmarshalling payload %w", asynq.SkipRetry)
 	}
 
+	log.Println("unmarshalled")
 	user, err := processor.store.GetUser(ctx, payload.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -63,6 +67,28 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 
 		return fmt.Errorf("Internal server error %w", err)
 		
+	}
+
+	log.Println(user)
+	args := db.CreateVerifyEmailParams{
+		Username: user.Username,
+		Email: user.Email,
+		SecretCode: utils.RandomString(32),
+	}
+
+	verifyEmail, err:= processor.store.CreateVerifyEmail(ctx, args)
+	if err != nil {
+		return fmt.Errorf("failed to create verify email %w: ", err)
+	}
+	content := fmt.Sprintf(`<h1>TEST EMAIL</h1> <p>Hello there, %s!</p>
+	<a href="http://localhost:8000/verify_email?id=%d&code=%s">Verify Your Email</a>`, 
+		user.Username, verifyEmail.ID, verifyEmail.SecretCode)
+
+	subject := "TEST EMAIL"
+	to := []string{"mukunajohn329@gmail.com"}
+
+	if err := processor.mailer.SendEmail(subject , content , to, nil, nil); err != nil {
+		return fmt.Errorf("failed to send verify email %w", err)
 	}
 
 	slog.Info(

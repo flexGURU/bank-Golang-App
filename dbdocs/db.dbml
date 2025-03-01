@@ -1,0 +1,79 @@
+Project SimpleBank {
+  database_type: 'PostgreSQL'
+}
+
+Table "users" {
+  "username" VARCHAR [pk]
+  "hashed_password" VARCHAR [not null]
+  "full_name" VARCHAR [not null]
+  "email" VARCHAR [unique, not null]
+  "is_verified" BOOLEAN [not null, default: false]
+  "password_changed_at" TIMESTAMPTZ [not null, default: '0001-01-01 00:00:00+00:00']
+  "created_at" TIMESTAMPTZ [not null, default: 'now()']
+}
+
+Table "verify_emails" {
+  "id" SERIAL [pk]
+  "username" VARCHAR [not null]
+  "email" VARCHAR [not null]
+  "secret_code" VARCHAR [not null]
+  "is_used" BOOLEAN [not null, default: false]
+  "created_at" TIMESTAMPTZ [not null, default: 'now()']
+  "expires_at" TIMESTAMPTZ [not null, default: `now() + interval '15 minutes'`]
+}
+
+Table "account" {
+  "id" SERIAL [pk, increment]
+  "owner" VARCHAR [not null]
+  "balance" INT [not null]
+  "currency" VARCHAR [not null]
+  "created_at" TIMESTAMPTZ [not null, default: 'now()']
+
+  Indexes {
+    (owner, currency) [unique, name: "owner_currency_key"]
+    owner [name: "idx_account_owner"]
+  }
+}
+
+Table "entries" {
+  "id" SERIAL [pk, increment]
+  "account_id" INT [not null]
+  "amount" INT [not null]
+  "created_at" TIMESTAMPTZ [not null, default: 'now()']
+
+  Indexes {
+    account_id [name: "idx_entries_account_id"]
+  }
+}
+
+Table "transfer" {
+  "id" SERIAL [pk, increment]
+  "from_account_id" INT [not null]
+  "to_account_id" INT [not null]
+  "amount" INT [not null]
+  "created_at" TIMESTAMPTZ [not null, default: 'now()']
+
+  Indexes {
+    from_account_id [name: "idx_transfer_from_account"]
+    to_account_id [name: "idx_transfer_to_account"]
+    (from_account_id, to_account_id) [name: "idx_transfer_from_to_account"]
+  }
+}
+
+Table "sessions" {
+  "id" UUID [pk]
+  "username" VARCHAR [not null]
+  "refresh_token" VARCHAR [not null]
+  "user_agent" VARCHAR [not null]
+  "client_ip" VARCHAR [not null]
+  "is_blocked" BOOLEAN [not null, default: false]
+  "expires_at" TIMESTAMPTZ [not null]
+  "created_at" TIMESTAMPTZ [not null, default: 'now()']
+}
+
+Ref: "users"."username" < "account"."owner"
+Ref: "account"."id" < "entries"."account_id"
+Ref: "account"."id" < "transfer"."from_account_id"
+Ref: "account"."id" < "transfer"."to_account_id"
+Ref: "users"."username" < "sessions"."username"
+Ref: "users"."username" < "verify_emails"."username"

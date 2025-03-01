@@ -16,6 +16,9 @@ type Config struct {
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 	RedisAddress string `mapstructure:"REDIS_ADDRESS"`
+	From_Email string `mapstructure:"FROM_EMAIL"`
+	EmailSendName string `mapstructure:"EMAIL_SEND_NAME"`
+	EamilPassword string `mapstructure:"EMAIL_PASSWORD"`
 }
 
 

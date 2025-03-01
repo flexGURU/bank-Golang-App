@@ -52,6 +52,8 @@ func (server *Server) serverRoutes() {
 	router.POST("/user", server.createUser)
 	router.POST("/user/login", server.loginUser)
 	router.POST("/renewtoken", server.renewAccessToken)
+	router.GET("/verify_email", server.verifyEmail)
+
 
 	authRoutes := router.Group("/").Use( authMiddleware(server.tokenMaker))
 
@@ -61,6 +63,7 @@ func (server *Server) serverRoutes() {
 	authRoutes.GET("/listaccounts", server.listAccounts)
 	
 	authRoutes.POST("/transfers", server.createTransfer)
+
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	

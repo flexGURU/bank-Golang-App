@@ -11,6 +11,7 @@ import (
 	"github.com/flexGURU/simplebank/worker"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
 )
 
 
@@ -55,27 +56,34 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	args := db.CreateUserParams {
-		Username: req.Username,
-		HashedPassword: password,
-		FullName: req.FullName,
-		Email: req.Email,
+	args := db.CreateUserTxParams {
+		CreateUserParams: db.CreateUserParams{
+			Username: req.Username,
+			HashedPassword: password,
+			FullName: req.FullName,
+			Email: req.Email,
+		},
+		AfterCreate: func(user db.User) error {
+			taskPayload := &worker.PayloadSendVerifyEmail{
+				Username: user.Username,
+			}
+		
+			opts := []asynq.Option{
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(worker.Critical_queue),
+			}
+		
+			return server.taskDistributer.DistributeTaskSendVerifyEmail(ctx, taskPayload, opts...);
+		},
 	}
 
-	user, err  := server.store.CreateUser(ctx, args)
+	user, err  := server.store.CreateUserTx(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
 		return
 	}
 
-	taskPayload := &worker.PayloadSendVerifyEmail{
-		Username: user.Username,
-	}
 
-	if err := server.taskDistributer.DistributeTaskSendVerifyEmail(ctx, taskPayload); err != nil {
-		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
-		return
-	}
 
 	userResponse := userResponse {
 		Username: user.Username,

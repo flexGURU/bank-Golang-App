@@ -9,6 +9,7 @@ import (
 	"github.com/flexGURU/simplebank/api"
 	db "github.com/flexGURU/simplebank/db/sqlc"
 	"github.com/flexGURU/simplebank/gapi"
+	"github.com/flexGURU/simplebank/mail"
 	"github.com/flexGURU/simplebank/pb"
 	"github.com/flexGURU/simplebank/utils"
 	"github.com/flexGURU/simplebank/worker"
@@ -41,19 +42,21 @@ func main() {
 
 	redisDistro := worker.NewRedisTaskDistributer(redisOpt)
 
-	go runTaskProcessor(redisOpt, store)
+	go runTaskProcessor(redisOpt, store, config)
 	startGinServer(config, store, redisDistro)
 
 }
 
-func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store)  {
-	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, config utils.Config)  {
+
+	mailSender := mail.NewGmailSender(config.EmailSendName, config.From_Email, config.EamilPassword)
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, mailSender)
 
 	slog.Info(
 		"task taskProcessor started",
 	)
 	if err := taskProcessor.Start(); err != nil {
-		slog.Error("failed to start task processor", err)
+		slog.Error("failed to start task processor %w", err)
 	}
 	
 	

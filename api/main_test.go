@@ -17,7 +17,7 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 		AccessTokenDuration: time.Minute,
 	}
 
-	server, err := NewServer(config, store)
+	server, err := NewServer(config, store, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, server)
 

@@ -37,9 +37,9 @@ func (server *Server) verifyEmail(ctx *gin.Context) {
 		return
 	}
 
-	isVerifiedResponmse = result.IsVerified
+	response := result.IsVerified
 
-	ctx.JSON(http.StatusAccepted, result)
+	ctx.JSON(http.StatusAccepted, response)
 
 
 

@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"log"
 )
 
 type VerifyEmailTxParams struct {

@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"log/slog"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/flexGURU/simplebank/api"
 	db "github.com/flexGURU/simplebank/db/sqlc"
@@ -18,8 +22,15 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	"golang.org/x/sync/errgroup"
 )
 
+var interruptSignals = []os.Signal{
+	os.Interrupt,
+	syscall.SIGTERM,
+	syscall.SIGINT,
+}
 
 
 func main() {
@@ -34,6 +45,9 @@ func main() {
 		log.Fatal("error opening the database",err)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	defer stop()
+
 	store := db.NewStore(connDb)
 
 	redisOpt := asynq.RedisClientOpt{
@@ -42,12 +56,17 @@ func main() {
 
 	redisDistro := worker.NewRedisTaskDistributer(redisOpt)
 
-	go runTaskProcessor(redisOpt, store, config)
-	startGinServer(config, store, redisDistro)
+	waitGroup, ctx := errgroup.WithContext(ctx)
 
+	runTaskProcessor(ctx, waitGroup, redisOpt, store, config)
+	startGinServer(ctx, waitGroup, config, store, redisDistro)
+
+	if err := waitGroup.Wait(); err != nil {
+		log.Fatalf("Error occurred: %v", err)
+	}
 }
 
-func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, config utils.Config)  {
+func runTaskProcessor(ctx context.Context, wg *errgroup.Group, redisOpt asynq.RedisClientOpt, store db.Store, config utils.Config)  {
 
 	mailSender := mail.NewGmailSender(config.EmailSendName, config.From_Email, config.EamilPassword)
 	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store, mailSender)
@@ -56,8 +75,17 @@ func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, config util
 		"task taskProcessor started",
 	)
 	if err := taskProcessor.Start(); err != nil {
-		slog.Error("failed to start task processor %w", err)
+		slog.Error("failed to start task processor %w", 
+		slog.String("error",err.Error()))
 	}
+
+	wg.Go(func() error {
+		<-ctx.Done()
+		slog.Info("shutting down processor")
+		taskProcessor.Shutdown()
+
+		return nil
+	})
 	
 	
 }
@@ -91,16 +119,31 @@ func startGRPCServer(config utils.Config,store db.Store)  {
 
 }
 
-func startGinServer(config utils.Config,store db.Store, taskDistributer worker.TaskDistributer)  {
+func startGinServer(ctx context.Context, wg *errgroup.Group, config utils.Config,store db.Store, taskDistributer worker.TaskDistributer)  {
 	server, err := api.NewServer(config, store, taskDistributer)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = server.StartServer(config.HTTPServerAddress); 
-	slog.Info("started the server", 
-				slog.String("port", config.HTTPServerAddress),
-				)
-	if err != nil {
-		log.Fatal("error starting up the server")
-	}
+
+	wg.Go(func() error {
+		slog.Info("started the server", slog.String("port", config.HTTPServerAddress))
+		err = server.StartServer(config.HTTPServerAddress); 
+		if err != nil {
+			slog.Error("error starting server", slog.String("error", err.Error()))
+			return err
+		}
+		return nil
+	})
+
+	wg.Go(func() error {
+		<- ctx.Done()
+		slog.Info("Gracefull shutdown")
+		if err := server.ShutdownServer(context.Background()); err != nil {
+			slog.Error("problem shutting down server", slog.String("error", err.Error()))
+			return err
+		}
+		return nil
+
+	})
+	
 }

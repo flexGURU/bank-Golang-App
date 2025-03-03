@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -77,11 +78,18 @@ func (server *Server) createUser(ctx *gin.Context) {
 		},
 	}
 
+	slog.Info("creating  user")
+
+	time.Sleep(8*time.Second)
+
 	user, err  := server.store.CreateUserTx(ctx, args)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
 		return
 	}
+
+	slog.Info("finished creating  user")
+
 
 
 

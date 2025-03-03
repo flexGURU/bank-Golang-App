@@ -1,7 +1,10 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
+	"net/http"
 
 	db "github.com/flexGURU/simplebank/db/sqlc"
 	docs "github.com/flexGURU/simplebank/docs"
@@ -21,6 +24,7 @@ type Server struct {
 	router *gin.Engine
 	tokenMaker token.Maker
 	taskDistributer worker.TaskDistributer
+	httpServer *http.Server
 }
 
 // NewServer will create a new HTTP server and setup routing
@@ -33,6 +37,9 @@ func NewServer(config utils.Config, store db.Store, taskDistributer worker.TaskD
 		return nil, fmt.Errorf("cannot create a token: %w", err)
 	}
 	
+
+
+
 	server := &Server{
 		config: config,
 		store: store,
@@ -41,6 +48,7 @@ func NewServer(config utils.Config, store db.Store, taskDistributer worker.TaskD
 	}
 
 	server.serverRoutes()
+
 
 	return server, nil
 	
@@ -76,6 +84,27 @@ func (server *Server) serverRoutes() {
 // starting the server
 func (server *Server) StartServer(address string) error {
 
-	return server.router.Run(address)
+	server.httpServer = &http.Server{
+		Addr: address,
+		Handler: server.router,
+	}
+
+	slog.Info(
+		"starting http server",
+		slog.String("address", address),
+	)
+
+	if err := server.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed{
+		slog.Error("failed to start Server", 
+		slog.String("error starting", err.Error()))
+		return err
+	}
+	return nil
+	
+}
+
+func (server *Server) ShutdownServer(ctx context.Context) error {
+
+	return server.httpServer.Shutdown(ctx);
 	
 }

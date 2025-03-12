@@ -63,7 +63,7 @@ dbml2sql:
 
 new_migration:
 	migrate create -ext sql -dir db/migrations -seq $(name)
-	
+
 gitpush:
 	git add . && git commit -m "sqlc" && git push
 

@@ -108,7 +108,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 type loginUserRequest struct {
 	Username       string `json:"username" binding:"required,alphanum"`
-	HashedPassword string `json:"hashed_password" binding:"required,min=6"`
+	HashedPassword string `json:"password" binding:"required,min=6"`
 }
 
 type loginResponse struct {
@@ -197,3 +197,26 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, Response)
 
 }
+
+// type usersResponse struct {
+// 	Username string `json:"username"`
+// 	Fullname string `json:"full_name"`
+// 	Email string `json:"email"`
+// }
+
+func (server *Server) listUsers(ctx *gin.Context) {
+
+	users, err := server.store.GetUsers(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse(err))
+		return
+	}
+
+
+	ctx.JSON(http.StatusOK, users)
+
+
+
+}
+
+

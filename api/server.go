@@ -14,6 +14,9 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+
+	"github.com/gin-contrib/cors"
+
 )
 
 
@@ -32,13 +35,10 @@ func NewServer(config utils.Config, store db.Store, taskDistributer worker.TaskD
 	docs.SwaggerInfo.BasePath = ""
 
 
-	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey) 
+	tokenMaker, err := token.NewJWTMaker(config.TokenSymmetricKey) 
 	if err != nil {
 		return nil, fmt.Errorf("cannot create a token: %w", err)
 	}
-	
-
-
 
 	server := &Server{
 		config: config,
@@ -57,6 +57,14 @@ func NewServer(config utils.Config, store db.Store, taskDistributer worker.TaskD
 func (server *Server) serverRoutes() {
 	router := gin.Default()
 
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{server.config.Origin},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
 	router.POST("/user", server.createUser)
 	router.POST("/user/login", server.loginUser)
 	router.POST("/renewtoken", server.renewAccessToken)
@@ -69,6 +77,7 @@ func (server *Server) serverRoutes() {
 	authRoutes.POST("/createaccount", server.createAccount)
 	authRoutes.POST("/getaccount/:id", server.getAccount)
 	authRoutes.GET("/listaccounts", server.listAccounts)
+	authRoutes.GET("/users", server.listUsers)
 	
 	authRoutes.POST("/transfers", server.createTransfer)
 

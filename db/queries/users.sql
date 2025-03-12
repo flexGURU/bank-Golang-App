@@ -13,6 +13,10 @@ RETURNING *;
 SELECT * FROM users 
 WHERE username = $1 LIMIT 1;
 
+
+-- name: GetUsers :many
+SELECT username, full_name, email FROM users;
+
 -- name: UpdateUserVerification :one
 UPDATE users 
 SET is_verified = TRUE

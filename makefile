@@ -29,8 +29,7 @@ sqlc:
 test:
 	go test -v -cover ./...
 
-gitpush:
-	git add . && git commit -m "sqlc" && git push
+
 
 psql:
 	docker exec -it simplebank psql bank
@@ -64,7 +63,9 @@ dbml2sql:
 
 new_migration:
 	migrate create -ext sql -dir db/migrations -seq $(name)
-
+	
+gitpush:
+	git add . && git commit -m "sqlc" && git push
 
 .PHONY: newmigrate simplebank_container migrations migrateup migratedown sqcl run mock dbdocs dbml2sql migrateup1 migratedown1 proto evans swagger
 

@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -21,6 +22,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 	return func (ctx *gin.Context) {
 		authHeader := ctx.GetHeader(authorizationHeaderKey)
 		if len(authHeader) == 0 {
+			log.Println("no authorisation Header")
 			err := errors.New("no authorisation Header")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, utils.ErrorResponse(err))
 			return
@@ -28,6 +30,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 
 		fields := strings.Fields(authHeader)
 		if len(fields) < 2 {
+			log.Println("no authorisation Header 2")
 			err := errors.New("inavlid auth header format")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, utils.ErrorResponse(err))
 			return
@@ -35,6 +38,7 @@ func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 
 		authType := strings.ToLower(fields[0])
 		if authType != authorizationTypeBearer {
+			log.Println("no authorisation Header 3")
 			err := errors.New("inavlid auth type not supported")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, utils.ErrorResponse(err))
 			return

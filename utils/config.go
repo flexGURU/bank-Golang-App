@@ -19,6 +19,7 @@ type Config struct {
 	From_Email string `mapstructure:"FROM_EMAIL"`
 	EmailSendName string `mapstructure:"EMAIL_SEND_NAME"`
 	EamilPassword string `mapstructure:"EMAIL_PASSWORD"`
+	Origin string `mapstructure:"ORIGIN"`
 }
 
 

@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"net/http"
 
 	db "github.com/flexGURU/simplebank/db/sqlc"
@@ -18,8 +19,10 @@ type createAcountRequest struct {
 func (server *Server) createAccount(ctx *gin.Context) {
 
 	var req createAcountRequest
+	
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("no authorisation Header")
 		ctx.JSON(http.StatusBadRequest, utils.ErrorResponse(err))
 		return
 	}
@@ -64,15 +67,20 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		if err == sql.ErrNoRows {
 
 		ctx.JSON(http.StatusNotFound, utils.ErrorResponse(err))
+		return
 		}
 
 		ctx.JSON(http.StatusInternalServerError, utils.ErrorResponse(err))
+		return
 		
 	}
+	
 	authPayload := ctx.MustGet(authPayloadKey).(*token.Payload)
-	if "eeee" != authPayload.Username {
+	if account.Owner != authPayload.Username {
+
 		err := errors.New("accouns doest belong to the authenticated user")
 		ctx.JSON(http.StatusUnauthorized, err)
+		return
 	}
 	
 	ctx.JSON(http.StatusOK, account)

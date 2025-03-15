@@ -34,6 +34,7 @@ var interruptSignals = []os.Signal{
 
 
 func main() {
+	
 
 	config, err := utils.LoadConfig(".")
 	if err != nil {
